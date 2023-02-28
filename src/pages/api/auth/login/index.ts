@@ -15,7 +15,7 @@ const key = process.env.STR
 export default defaultHandler.post(async (req, res) => {
     const { password, email } = req.body
     const user = await getOne(email)
-    if (user.verified) {
+    if (user && user.verified) {
         compare(password, user!.token, (err, result) => {
             delete user.token
             if (result && !err) {
@@ -62,11 +62,17 @@ export default defaultHandler.post(async (req, res) => {
                 })
             }
         })
-    } else {
+    } if (user && !user.verified) {
         errLogger.error(`${email} is not yet validated!`)
         res.status(401).send({
             confirmed: false,
             message: `${email} is not yet validated, please do it!`
+        })
+    } if (!user) {
+        errLogger.error(`${email} does not exist!`)
+        res.status(404).send({
+            confirmed: false,
+            message: `${email} does not exist, please create an account if you want to access the services!`
         })
     }
 })
